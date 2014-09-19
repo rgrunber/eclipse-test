@@ -1,0 +1,36 @@
+= ABOUT =
+
+This is a specfile that when built into an srpm, will perform some basic
+testing of the Eclipse platform while ensuring necessary dependencies are
+available. Running in a mock environment makes the testing isolated and easily
+reproducible.
+
+= DEPENDENCIES =
+
+rpm-build
+rpmdevtools (optional)
+mock (optional)
+
+
+= HOW TO BUILD AND RUN THE SCRIPT =
+
+Create an RPM build tree manually, or simply install rpmdevtools and have let rpmdev-setuptree set things up for you :
+
+ $ yum install rpmdevtools
+ $ rpmdev-setuptree
+
+place the 'test.spec' file in the SPECS folder of your buildroot.
+then simply run :
+
+ $ rpmbuild -bs %{_topdir}/SPECS/test.spec
+
+The resulting source rpm should be created in your SRPMS folder.
+
+This can now be run on a system that satisfies the source RPMS's dependencies
+or much more simply with mock.
+
+ $ mock -r fedora-rawhide-x86_64 --init
+ $ mock -r fedora-rawhide-x86_64 %{_topdir}/SRPMS/test-42-666.srpm
+
+The build will launch eclipse and print out various diagnostic information to
+help determine the state of the installation.
