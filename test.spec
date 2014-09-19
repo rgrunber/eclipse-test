@@ -20,10 +20,13 @@ trap "kill $!" 0
 export DISPLAY=:5
 sleep 5
 
+fail=0
+logFile=log.txt
+
 # Check for dangling symlinks
 echo === BEGIN DANGLING SYMLINK REPORT === >&2
 for link in `find /usr/{share,lib,lib64}/eclipse -type l 2>/dev/null`; do
-  [ -e $link ] || ls -l $link
+  [ -e $link ] || ( ls -l $link && fail=1 )
 done
 echo === END DANGLING SYMLINK REPORT === >&2
 
@@ -46,18 +49,22 @@ EOF
   sleep 5
 
   # Show details of all installed bundles
-  echo === DETAILED BUNDLE DUMP === >&2
-  for b in `seq 1000`; do echo b $b; done
-  sleep 30
+#  echo === DETAILED BUNDLE DUMP === >&2
+#  for b in `seq 1000`; do echo b $b; done
+#  sleep 30
 
   # Ask Equinox to shutdown gracefully
   echo === END OF LOG === >&2
   echo exit
   echo y
-) | eclipse -clean -debug -console -consolelog -data $HOME/work
+) | eclipse -clean -debug -console -consolelog -data $HOME/work \
+  | tee ${logFile}
 
-# Prevent mock from creating unnecessary outout
-exit 1
+grep 'INSTALLED' ${logFile} && fail=1
+
+if [ ${fail} -eq 1 ]; then
+  exit 1
+fi
 
 %changelog
 * Sat Dec 22 2012 John Doe <jdoe@localhost>
