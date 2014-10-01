@@ -57,7 +57,7 @@ EOF
   echo === END OF LOG === >&2
   echo exit
   echo y
-) | eclipse -clean -debug -console -consolelog -data $HOME/work \
+) | eclipse -clean -debug -noexit -console -consolelog -data $HOME/work \
   | tee ${logFile}
 
 grep 'INSTALLED' ${logFile} && fail=1
