@@ -22,9 +22,10 @@ cd $HOME
 . %{SOURCE0}
 
 # Start a headless X server in background
-Xvfb :5 &
+port=$(( $RANDOM % 100 ))
+Xvfb :$port &
 trap "kill $!" 0
-export DISPLAY=:5
+export DISPLAY=:$port
 sleep 5
 
 fail=0
