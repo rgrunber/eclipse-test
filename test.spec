@@ -1,4 +1,7 @@
-Name:           test
+%{?scl:%scl_package test}
+%{?scl:%global eclipse_cmd scl enable %{scl} "eclipse -clean -debug -noexit -console -consolelog -data $HOME/work | tee ${logFile}"}
+%{!?scl:%global eclipse_cmd eclipse -clean -debug -noexit -console -consolelog -data $HOME/work | tee ${logFile}}
+Name:           %{?scl_prefix}test
 Version:        42
 Release:        666
 Summary:        test
@@ -6,7 +9,9 @@ License:        GPL
 URL:            file:/dev/null
 Source0:        functions.sh
 BuildRequires:  xorg-x11-server-Xvfb
-BuildRequires:  eclipse-m2e-core
+BuildRequires:  java-devel
+%{?scl:BuildRequires:  %{?scl_prefix}ide}
+%{!?scl:BuildRequires:  eclipse-m2e-core}
 
 %description
 test
@@ -27,7 +32,7 @@ logFile=log.txt
 
 # Check for dangling symlinks
 echo === BEGIN DANGLING SYMLINK REPORT === >&2
-for link in `find /usr/{share,lib,lib64}/eclipse -type l 2>/dev/null`; do
+for link in `find %{?_scl_root}/usr/{share,lib,lib64}/eclipse -type l 2>/dev/null`; do
   [ -e $link ] || ( ls -l $link && fail=1 )
 done
 echo === END DANGLING SYMLINK REPORT === >&2
@@ -59,8 +64,7 @@ EOF
   echo === END OF LOG === >&2
   echo exit
   echo y
-) | eclipse -clean -debug -noexit -console -consolelog -data $HOME/work \
-  | tee ${logFile}
+) | %{eclipse_cmd}
 
 grep 'INSTALLED' ${logFile} && fail=1
 
@@ -68,7 +72,7 @@ grep 'INSTALLED' ${logFile} && fail=1
 # Checks the p2 profile, so Eclipse must have run
 set +e
 echo === BEGIN MISSING SINGLETON REPORT === >&2
-for jar in `find /usr/{share,lib,lib64}/eclipse -name "*.jar" 2>/dev/null`; do
+for jar in `find %{?_scl_root}/usr/{share,lib,lib64}/eclipse -name "*.jar" 2>/dev/null`; do
   mf=`unzip -p $jar 'META-INF/MANIFEST.MF'`
   jar -tf $jar | grep -q '^plugin.xml$' || echo $mf | grep -q 'Service-Component'
   if [ $? -eq 0 ]; then
