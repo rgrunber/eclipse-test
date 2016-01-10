@@ -1,6 +1,8 @@
 %{?scl:%scl_package test}
-%{?scl:%global eclipse_cmd scl enable %{scl} "eclipse -clean -debug -noexit -console -consolelog -data $HOME/work | tee ${logFile}"}
-%{!?scl:%global eclipse_cmd eclipse -clean -debug -noexit -console -consolelog -data $HOME/work | tee ${logFile}}
+%{?scl:%global eclipse_cmd_init scl enable %{scl} "eclipse -clean -debug -noexit -console -consolelog -data $HOME/work | tee ${logFile}"}
+%{!?scl:%global eclipse_cmd_init eclipse -clean -debug -noexit -console -consolelog -data $HOME/work | tee ${logFile}}
+%{?scl:%global eclipse_cmd scl enable %{scl} "eclipse -noexit -console"}
+%{!?scl:%global eclipse_cmd eclipse -noexit -console}
 Name:           %{?scl_prefix}test
 Version:        42
 Release:        666
@@ -10,6 +12,7 @@ URL:            file:/dev/null
 Source0:        functions.sh
 BuildRequires:  xorg-x11-server-Xvfb
 BuildRequires:  java-devel
+BuildRequires:  /usr/bin/time
 %{?scl:BuildRequires:  %{?scl_prefix}ide}
 %{!?scl:BuildRequires:  eclipse-m2e-core}
 
@@ -65,9 +68,20 @@ EOF
   echo === END OF LOG === >&2
   echo exit
   echo y
-) | %{eclipse_cmd}
+) | %{eclipse_cmd_init}
 
 grep 'INSTALLED' ${logFile} && fail=1
+
+numOfBundles=`grep -E "(INSTALLED|RESOLVED|STARTING|ACTIVE)" ${logFile} | wc -l`
+echo "There are ${numOfBundles} installed."
+
+# How long does it take to initialize the Eclipse installation
+set +e
+for i in {1..5}; do
+  rm -rf $HOME/.eclipse/
+  (echo "exit" ; echo "y" ;) | /usr/bin/time -f "Eclipse initialization took %E" %{eclipse_cmd} -noexit -console
+done
+set -e
 
 # Check for missing singleton directives
 # Checks the p2 profile, so Eclipse must have run
